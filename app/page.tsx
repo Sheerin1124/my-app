@@ -13,17 +13,38 @@ export default function Home() {
   const [decisions, setDecisions] = useState<string[]>([]);
   const [actionItems, setActionItems] = useState<string[]>([]);
 
-  const handleAnalyze = () => {
-    setLoading(true);
+  const handleAnalyze = async () => {
+  setLoading(true);
 
-    setTimeout(() => {
-      setSummary("This is a test summary. Backend not connected yet.");
-      setDecisions(["Test decision 1", "Test decision 2"]);
-      setActionItems(["Test action item 1", "Test action item 2"]);
-      setLoading(false);
-    }, 1000);
-  };
+  try {
+    const response = await fetch("/api/meeting-intelligence", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        transcript: transcript,
+      }),
+    });
 
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Backend connection failed");
+    }
+
+    console.log("Backend Response:", data);
+
+    setSummary(data.summary || "");
+    setDecisions(data.decisions || []);
+    setActionItems(data.actionItems || []);
+  } catch (error) {
+    console.error("API Error:", error);
+    setSummary("Failed to connect with backend.");
+  } finally {
+    setLoading(false);
+  }
+};
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setVideoFile(file);
