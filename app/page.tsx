@@ -6,48 +6,78 @@ export default function Home() {
   const [inputMode, setInputMode] = useState<"transcript" | "video">(
     "transcript"
   );
-  const [transcript, setTranscript] = useState<string>("");
+
+  const [transcript, setTranscript] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [summary, setSummary] = useState<string>("");
+
+  const [loading, setLoading] = useState(false);
+  const [summary, setSummary] = useState("");
   const [decisions, setDecisions] = useState<string[]>([]);
   const [actionItems, setActionItems] = useState<string[]>([]);
+  const [error, setError] = useState("");
 
+  // Analyze Meeting
   const handleAnalyze = async () => {
-  setLoading(true);
-
-  try {
-    const response = await fetch("/api/meeting-intelligence", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        transcript: transcript,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Backend connection failed");
+    if (inputMode === "transcript" && transcript.trim() === "") {
+      setError("Please paste a meeting transcript first.");
+      return;
     }
 
-    console.log("Backend Response:", data);
+    if (inputMode === "video") {
+      setError(
+        "Video transcription is not connected yet. Please use Paste Transcript for now."
+      );
+      return;
+    }
 
-    setSummary(data.summary || "");
-    setDecisions(data.decisions || []);
-    setActionItems(data.actionItems || []);
-  } catch (error) {
-    console.error("API Error:", error);
-    setSummary("Failed to connect with backend.");
-  } finally {
-    setLoading(false);
-  }
-};
+    setLoading(true);
+
+    // Clear previous results
+    setSummary("");
+    setDecisions([]);
+    setActionItems([]);
+    setError("");
+
+    try {
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          transcript: transcript.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      console.log("Backend Response:", data);
+
+      if (!response.ok) {
+        throw new Error(data.error || "Backend connection failed");
+      }
+
+      setSummary(data.summary || "No summary generated.");
+      setDecisions(data.decisions || []);
+      setActionItems(data.actionItems || []);
+    } catch (err) {
+      console.error("API Error:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to connect with backend."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // File Upload
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     setVideoFile(file);
+    setError("");
   };
 
   const isButtonDisabled =
@@ -56,65 +86,156 @@ export default function Home() {
     (inputMode === "video" && videoFile === null);
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
-      <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">
-        AI Meeting-to-Action Intelligence Agent
-      </h1>
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 p-4 md:p-8">
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
-        {/* INPUT SECTION */}
-        <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col">
-          <div className="flex gap-2 mb-4">
-            <button
-              type="button"
-              onClick={() => setInputMode("transcript")}
-              className={`flex-1 py-2 rounded-lg font-semibold text-sm ${
-                inputMode === "transcript"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              Paste Transcript
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setInputMode("video")}
-              className={`flex-1 py-2 rounded-lg font-semibold text-sm ${
-                inputMode === "video"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              Upload Meeting Video
-            </button>
+      {/* HEADER */}
+      <div className="max-w-7xl mx-auto mb-8">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg">
+            <span className="text-2xl">🤖</span>
           </div>
 
-          {/* TRANSCRIPT INPUT */}
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-800">
+              AI Meeting-to-Action
+            </h1>
+
+            <p className="text-sm text-slate-500">
+              Intelligence Agent
+            </p>
+          </div>
+        </div>
+
+        <p className="text-slate-500 text-sm md:text-base">
+          Transform messy meeting conversations into clear summaries,
+          decisions, and actionable tasks.
+        </p>
+      </div>
+
+      {/* MAIN GRID */}
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* LEFT PANEL */}
+        <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-6">
+
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-xl font-bold text-slate-800">
+                Meeting Input
+              </h2>
+
+              <p className="text-sm text-slate-500 mt-1">
+                Choose how you want to provide your meeting content.
+              </p>
+            </div>
+          </div>
+
+          {/* TABS */}
+          <div className="flex bg-slate-100 rounded-xl p-1 mb-5">
+
+            <button
+              type="button"
+              onClick={() => {
+                setInputMode("transcript");
+                setError("");
+              }}
+              className={`flex-1 py-3 rounded-lg font-semibold text-sm transition-all ${
+                inputMode === "transcript"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              📝 Paste Transcript
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setInputMode("video");
+                setError("");
+              }}
+              className={`flex-1 py-3 rounded-lg font-semibold text-sm transition-all ${
+                inputMode === "video"
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700"
+              }`}
+            >
+              🎥 Upload Video
+            </button>
+
+          </div>
+
+          {/* TRANSCRIPT */}
           {inputMode === "transcript" && (
-            <textarea
-              className="flex-1 w-full min-h-[350px] border border-gray-300 rounded-lg p-4 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Paste your messy meeting transcript here..."
-              value={transcript}
-              onChange={(e) => setTranscript(e.target.value)}
-            />
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Meeting Transcript
+              </label>
+
+              <textarea
+                className="w-full min-h-[360px] border border-slate-200 rounded-2xl p-4 text-sm text-slate-700 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                placeholder="Paste your meeting transcript here...
+
+Example:
+Team discussed project progress. Frontend team will complete UI by Friday. Backend team will integrate the API. Everyone agreed to test before submission."
+                value={transcript}
+                onChange={(e) => {
+                  setTranscript(e.target.value);
+                  setError("");
+                }}
+              />
+
+              <div className="flex justify-between text-xs text-slate-400 mt-2">
+                <span>AI will analyze your transcript</span>
+                <span>{transcript.length} characters</span>
+              </div>
+            </div>
           )}
 
-          {/* VIDEO INPUT */}
+          {/* VIDEO UPLOAD */}
           {inputMode === "video" && (
-            <div className="flex-1 min-h-[350px] flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <div className="min-h-[360px] flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center bg-slate-50">
+
+              <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">
+                <span className="text-3xl">🎬</span>
+              </div>
+
+              <h3 className="font-semibold text-slate-700 mb-2">
+                Upload Meeting Video
+              </h3>
+
+              <p className="text-sm text-slate-500 mb-5">
+                Upload MP4, MOV, or audio files.
+              </p>
+
               <input
                 type="file"
                 accept="video/*,audio/*"
                 onChange={handleFileChange}
-                className="text-sm"
+                className="block w-full max-w-xs text-sm text-slate-600
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-lg file:border-0
+                file:bg-blue-600 file:text-white
+                file:font-semibold
+                hover:file:bg-blue-700"
               />
 
               {videoFile && (
-                <p className="text-sm text-gray-600 mt-3">
-                  Selected: {videoFile.name}
-                </p>
+                <div className="mt-5 p-3 bg-white rounded-xl border border-slate-200 w-full max-w-xs">
+                  <p className="text-xs text-slate-400">Selected file</p>
+                  <p className="text-sm font-medium text-slate-700 truncate">
+                    {videoFile.name}
+                  </p>
+                </div>
               )}
+
+            </div>
+          )}
+
+          {/* ERROR MESSAGE */}
+          {error && (
+            <div className="mt-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
+              ⚠️ {error}
             </div>
           )}
 
@@ -123,68 +244,146 @@ export default function Home() {
             type="button"
             onClick={handleAnalyze}
             disabled={isButtonDisabled}
-            className={`mt-4 font-semibold py-3 rounded-lg transition ${
+            className={`w-full mt-5 py-3.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 ${
               isButtonDisabled
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-blue-600 text-white hover:bg-blue-700"
+                ? "bg-slate-200 text-slate-400 cursor-not-allowed"
+                : "bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200"
             }`}
           >
-            {loading ? "Analyzing..." : "Analyze Meeting"}
+            {loading ? (
+              <>
+                <span className="animate-spin">⏳</span>
+                Analyzing Meeting...
+              </>
+            ) : (
+              <>
+                ✨ Analyze Meeting
+              </>
+            )}
           </button>
+
         </div>
 
-        {/* OUTPUT SECTION */}
-        <div className="flex flex-col gap-6">
-          {/* SUMMARY */}
-          <div className="bg-blue-50 border border-blue-200 rounded-2xl shadow-md p-6">
-            <h2 className="text-lg font-bold text-blue-700 mb-2">
-              Summary
-            </h2>
 
-            <p className="text-gray-700 text-sm">
-              {summary || "Summary will appear here after analysis."}
+        {/* RIGHT PANEL */}
+        <div className="flex flex-col gap-5">
+
+          {/* SUMMARY CARD */}
+          <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-6">
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                📄
+              </div>
+
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">
+                  Summary
+                </h2>
+
+                <p className="text-xs text-slate-400">
+                  AI-generated meeting overview
+                </p>
+              </div>
+            </div>
+
+            <p className="text-sm text-slate-600 leading-7">
+              {summary || "Your meeting summary will appear here after analysis."}
             </p>
+
           </div>
 
-          {/* DECISIONS */}
-          <div className="bg-green-50 border border-green-200 rounded-2xl shadow-md p-6">
-            <h2 className="text-lg font-bold text-green-700 mb-2">
-              Key Decisions
-            </h2>
+
+          {/* DECISIONS CARD */}
+          <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-6">
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+                🎯
+              </div>
+
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">
+                  Key Decisions
+                </h2>
+
+                <p className="text-xs text-slate-400">
+                  Important decisions made during the meeting
+                </p>
+              </div>
+            </div>
 
             {decisions.length > 0 ? (
-              <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+              <ul className="space-y-3">
                 {decisions.map((decision, index) => (
-                  <li key={index}>{decision}</li>
+                  <li
+                    key={index}
+                    className="flex items-start gap-3 text-sm text-slate-600"
+                  >
+                    <span className="mt-1 w-2 h-2 rounded-full bg-green-500 flex-shrink-0"></span>
+                    <span>{decision}</span>
+                  </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-gray-500 text-sm">
-                Decisions will appear here.
+              <p className="text-sm text-slate-400">
+                Decisions will appear here after analysis.
               </p>
             )}
+
           </div>
 
-          {/* ACTION ITEMS */}
-          <div className="bg-orange-50 border border-orange-200 rounded-2xl shadow-md p-6">
-            <h2 className="text-lg font-bold text-orange-700 mb-2">
-              Action Items
-            </h2>
+
+          {/* ACTION ITEMS CARD */}
+          <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-6">
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center">
+                🚀
+              </div>
+
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">
+                  Action Items
+                </h2>
+
+                <p className="text-xs text-slate-400">
+                  Tasks identified from the meeting
+                </p>
+              </div>
+            </div>
 
             {actionItems.length > 0 ? (
-              <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                {actionItems.map((actionItem, index) => (
-                  <li key={index}>{actionItem}</li>
+              <ul className="space-y-3">
+                {actionItems.map((item, index) => (
+                  <li
+                    key={index}
+                    className="flex items-start gap-3 text-sm text-slate-600"
+                  >
+                    <span className="mt-1 w-2 h-2 rounded-full bg-orange-500 flex-shrink-0"></span>
+                    <span>{item}</span>
+                  </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-gray-500 text-sm">
-                Action items will appear here.
+              <p className="text-sm text-slate-400">
+                Action items will appear here after analysis.
               </p>
             )}
+
           </div>
+
         </div>
+
       </div>
+
+      {/* FOOTER */}
+      <div className="max-w-7xl mx-auto text-center mt-8">
+        <p className="text-xs text-slate-400">
+          AI-powered meeting intelligence • Built for smarter teamwork
+        </p>
+      </div>
+
     </main>
   );
 }
