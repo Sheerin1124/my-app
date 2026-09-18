@@ -152,8 +152,6 @@ The planned architecture is:
 ```text
 Meeting Transcript / Video
             ↓
-       Backend API
-            ↓
      Speech-to-Text
             ↓
         AI Model
