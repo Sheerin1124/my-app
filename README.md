@@ -1,36 +1,236 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Meeting-to-Action Intelligence Agent
 
-## Getting Started
+An AI-powered meeting assistant that converts meeting transcripts or uploaded meeting recordings into structured, actionable information.
 
-First, run the development server:
+The application is designed to help users quickly understand what happened during a meeting by extracting:
+
+* 📝 Meeting Summary
+* ✅ Key Decisions
+* 📌 Action Items
+
+## 🚀 Features
+
+### 1. Paste Meeting Transcript
+
+Users can paste a meeting transcript into the application.
+
+### 2. Upload Meeting Recording
+
+Users can upload a meeting video or audio file.
+
+Supported input types:
+
+* Video files
+* Audio files
+
+### 3. Meeting Analysis
+
+Clicking **Analyze Meeting** processes the provided meeting input.
+
+> **Current status:** The AI/backend is not connected yet. The application currently displays test data after a short loading period.
+
+### 4. Structured Results
+
+The interface displays the analysis in three sections:
+
+#### Summary
+
+Provides a short overview of the meeting.
+
+#### Key Decisions
+
+Displays important decisions made during the meeting.
+
+#### Action Items
+
+Displays tasks that need to be completed.
+
+## 🛠️ Tech Stack
+
+* **Next.js**
+* **React**
+* **TypeScript**
+* **Tailwind CSS**
+* **React Hooks**
+
+## 📁 Project Structure
+
+```text
+project/
+├── app/
+│   ├── page.tsx
+│   ├── layout.tsx
+│   └── globals.css
+├── public/
+├── package.json
+├── tsconfig.json
+├── tailwind.config.ts
+└── README.md
+```
+
+## ⚙️ Getting Started
+
+### Prerequisites
+
+Make sure you have installed:
+
+* Node.js
+* npm
+
+You can check your versions with:
+
+```bash
+node --version
+npm --version
+```
+
+### 1. Clone the Repository
+
+```bash
+git clone <your-repository-url>
+```
+
+Move into the project directory:
+
+```bash
+cd <your-project-folder>
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Start the Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open your browser and visit:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🖥️ How to Use
 
-## Learn More
+### Transcript Mode
 
-To learn more about Next.js, take a look at the following resources:
+1. Open the application.
+2. Select **Paste Transcript**.
+3. Paste your meeting transcript.
+4. Click **Analyze Meeting**.
+5. The application will display the summary, decisions, and action items.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Video/Audio Mode
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Select **Upload Meeting Video**.
+2. Choose a video or audio file.
+3. Click **Analyze Meeting**.
+4. The selected file is currently accepted by the frontend, but actual transcription and AI processing still need to be implemented.
 
-## Deploy on Vercel
+## 🔌 Backend Integration
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The current frontend uses mock data:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```text
+Meeting Input
+     ↓
+Analyze Meeting
+     ↓
+Mock Processing
+     ↓
+Summary
+Decisions
+Action Items
+```
+
+The planned architecture is:
+
+```text
+Meeting Transcript / Video
+            ↓
+       Backend API
+            ↓
+     Speech-to-Text
+            ↓
+        AI Model
+            ↓
+   Structured JSON Result
+            ↓
+         Frontend
+            ↓
+ ┌──────────┼──────────┐
+ ↓          ↓          ↓
+Summary  Decisions  Action Items
+```
+
+A future backend API could return data in a structure such as:
+
+```json
+{
+  "summary": "The team discussed the upcoming product launch.",
+  "decisions": [
+    "Launch date will be finalized this week.",
+    "Marketing will prepare the campaign."
+  ],
+  "actionItems": [
+    "Prepare the marketing campaign",
+    "Finalize the launch date"
+  ]
+}
+```
+
+## 🔮 Future Improvements
+
+Possible future features include:
+
+* AI-powered transcript summarization
+* Automatic audio/video transcription
+* Speaker identification
+* Action-item owner detection
+* Due-date extraction
+* Meeting topic extraction
+* Priority detection
+* Export results as PDF
+* Download meeting notes
+* Search through previous meetings
+* Meeting history
+* Calendar integration
+* Email/Slack notifications
+* Authentication and user accounts
+* Persistent database storage
+
+## 🎯 Project Goal
+
+The goal of this project is to transform unstructured meeting conversations into useful, structured information.
+
+Instead of manually reviewing an entire meeting, users should be able to quickly see:
+
+> **What was discussed?**
+
+> **What was decided?**
+
+> **What needs to be done next?**
+
+## 📌 Current Limitations
+
+This is currently a frontend prototype.
+
+The following functionality has not yet been connected:
+
+* Backend API
+* Real AI model
+* Speech-to-text processing
+* Video/audio processing
+* Database
+* User authentication
+* Persistent meeting storage
+
+The application currently uses test data to demonstrate the user interface and workflow.
+
+## 📄 License
+
+This project is available for educational and development purposes. Add your preferred license here before publishing the project publicly.
