@@ -1,69 +1,141 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
 
 export default function Home() {
+  const [inputMode, setInputMode] = useState("transcript");
+  const [transcript, setTranscript] = useState("");
+  const [videoFile, setVideoFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [summary, setSummary] = useState("");
+  const [decisions, setDecisions] = useState([]);
+  const [actionItems, setActionItems] = useState([]);
+
+  const handleAnalyze = () => {
+    setLoading(true);
+    setTimeout(() => {
+      setSummary("This is a test summary. Backend not connected yet.");
+      setDecisions(["Test decision 1", "Test decision 2"]);
+      setActionItems(["Test action item 1", "Test action item 2"]);
+      setLoading(false);
+    }, 1000);
+  };
+
+  const isButtonDisabled =
+    loading ||
+    (inputMode === "transcript" && !transcript) ||
+    (inputMode === "video" && !videoFile);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="min-h-screen bg-gray-50 p-6">
+      <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">
+        AI Meeting-to-Action Intelligence Agent
+      </h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col">
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setInputMode("transcript")}
+              className={`flex-1 py-2 rounded-lg font-semibold text-sm transition ${
+                inputMode === "transcript"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-600"
+              }`}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              Paste Transcript
+            </button>
+            <button
+              onClick={() => setInputMode("video")}
+              className={`flex-1 py-2 rounded-lg font-semibold text-sm transition ${
+                inputMode === "video"
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-600"
+              }`}
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+              Upload Meeting Video
+            </button>
+          </div>
+
+          {inputMode === "transcript" ? (
+            <textarea
+              className="flex-1 w-full min-h-[350px] border border-gray-300 rounded-lg p-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              placeholder="Paste your messy meeting transcript here..."
+              value={transcript}
+              onChange={(e) => setTranscript(e.target.value)}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+              <input
+                type="file"
+                accept="video/*,audio/*"
+                onChange={(e) => setVideoFile(e.target.files[0] || null)}
+                className="text-sm"
+              />
+              {videoFile ? (
+                <p className="text-sm text-gray-600 mt-3">
+                  Selected: {videoFile.name}
+                </p>
+              ) : (
+                <p className="text-xs text-gray-400 mt-3">
+                  Upload your meeting recording (mp4, mp3, wav, etc.)
+                </p>
+              )}
+            </div>
+          )}
+
+          <button
+            onClick={handleAnalyze}
+            disabled={isButtonDisabled}
+            className="mt-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-semibold py-3 rounded-lg transition"
           >
-            Documentation
-          </a>
+            {loading ? "Analyzing..." : "Analyze Meeting"}
+          </button>
         </div>
-      </main>
+
+        <div className="flex flex-col gap-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl shadow-md p-6">
+            <h2 className="text-lg font-bold text-blue-700 mb-2">Summary</h2>
+            <p className="text-gray-700 text-sm">
+              {summary || "Summary will appear here after analysis."}
+            </p>
+          </div>
+
+          <div className="bg-green-50 border border-green-200 rounded-2xl shadow-md p-6">
+            <h2 className="text-lg font-bold text-green-700 mb-2">
+              Key Decisions
+            </h2>
+            {decisions.length > 0 ? (
+              <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                {decisions.map((d, i) => (
+                  <li key={i}>{d}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-500 text-sm">
+                Decisions will appear here.
+              </p>
+            )}
+          </div>
+
+          <div className="bg-orange-50 border border-orange-200 rounded-2xl shadow-md p-6">
+            <h2 className="text-lg font-bold text-orange-700 mb-2">
+              Action Items
+            </h2>
+            {actionItems.length > 0 ? (
+              <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                {actionItems.map((a, i) => (
+                  <li key={i}>{a}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-500 text-sm">
+                Action items will appear here.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
