@@ -34,7 +34,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function analyzeMeeting() {
+  const analyzeMeeting = async () => {
     if (!transcript.trim()) {
       setError("Please enter a meeting transcript first.");
       return;
@@ -45,20 +45,20 @@ export default function Home() {
     setResult(null);
 
     try {
-      const response = await fetch("/api/meeting-intelligence",  {
+      const response = await fetch("/api/meeting-intelligence", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          transcript: transcript.trim(),
+          transcript: transcript,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data?.error || "Failed to analyze meeting.");
+        throw new Error(data.error || "Something went wrong.");
       }
 
       setResult(data);
@@ -66,29 +66,29 @@ export default function Home() {
       setError(
         err instanceof Error
           ? err.message
-          : "Something went wrong."
+          : "Failed to analyze the meeting."
       );
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  function loadSample() {
+  const loadSample = () => {
     setTranscript(sampleTranscript);
     setResult(null);
     setError("");
-  }
+  };
 
-  function clearAll() {
+  const clearAll = () => {
     setTranscript("");
     setResult(null);
     setError("");
-  }
+  };
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       {/* Header */}
-      <header className="border-b border-white/10 bg-slate-950">
+      <header className="border-b border-white/10 bg-slate-950/95">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
@@ -114,13 +114,14 @@ export default function Home() {
           </h2>
 
           <p className="mt-2 max-w-2xl text-slate-400">
-            Paste your meeting transcript and let AI extract the
-            summary, decisions, and action items automatically.
+            Paste your meeting transcript and let AI extract the summary,
+            decisions, and action items automatically.
           </p>
         </div>
 
+        {/* Split Screen */}
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Left Side */}
+          {/* LEFT — Transcript */}
           <section className="rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <div>
@@ -134,9 +135,8 @@ export default function Home() {
               </div>
 
               <button
-                type="button"
                 onClick={loadSample}
-                className="rounded-lg border border-blue-400/30 bg-blue-400/10 px-3 py-2 text-xs font-medium text-blue-300 hover:bg-blue-400/20"
+                className="rounded-lg border border-blue-400/30 bg-blue-400/10 px-3 py-2 text-xs font-medium text-blue-300 transition hover:bg-blue-400/20"
               >
                 Load Sample
               </button>
@@ -154,18 +154,16 @@ export default function Home() {
 
             <div className="mt-4 flex gap-3">
               <button
-                type="button"
                 onClick={analyzeMeeting}
                 disabled={loading}
-                className="flex-1 rounded-xl bg-blue-500 px-5 py-3 font-semibold text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex-1 rounded-xl bg-blue-500 px-5 py-3 font-semibold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? "Analyzing Meeting..." : "Analyze Meeting"}
               </button>
 
               <button
-                type="button"
                 onClick={clearAll}
-                className="rounded-xl border border-white/10 px-5 py-3 font-medium text-slate-300 hover:bg-white/5"
+                className="rounded-xl border border-white/10 px-5 py-3 font-medium text-slate-300 transition hover:bg-white/5"
               >
                 Clear
               </button>
@@ -178,7 +176,7 @@ export default function Home() {
             )}
           </section>
 
-          {/* Right Side */}
+          {/* RIGHT — AI Output */}
           <section className="space-y-5">
             {/* Summary */}
             <div className="rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-xl">
@@ -188,10 +186,7 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <h3 className="font-semibold">
-                    Meeting Summary
-                  </h3>
-
+                  <h3 className="font-semibold">Meeting Summary</h3>
                   <p className="text-xs text-slate-500">
                     AI-generated overview
                   </p>
@@ -217,10 +212,7 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <h3 className="font-semibold">
-                    Key Decisions
-                  </h3>
-
+                  <h3 className="font-semibold">Key Decisions</h3>
                   <p className="text-xs text-slate-500">
                     Important decisions made
                   </p>
@@ -257,10 +249,7 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <h3 className="font-semibold">
-                    Action Items
-                  </h3>
-
+                  <h3 className="font-semibold">Action Items</h3>
                   <p className="text-xs text-slate-500">
                     Tasks extracted from the meeting
                   </p>
