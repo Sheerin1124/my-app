@@ -1,169 +1,315 @@
 "use client";
 
-import { useState, ChangeEvent } from "react";
+import { useState } from "react";
+
+type ActionItem = {
+  task: string;
+  owner: string;
+  deadline: string;
+};
+
+type MeetingResult = {
+  summary: string;
+  decisions: string[];
+  action_items: ActionItem[];
+};
+
+const sampleTranscript = `Project Manager: Thanks everyone for joining. We need to finalize the mobile application release plan today.
+
+Developer: The login module is almost complete. I will fix the remaining authentication bug by Friday.
+
+Designer: The new dashboard design is ready. We agreed to use the blue and white theme across the application.
+
+Project Manager: Good. Let's go with that design. We also need the final dashboard screens reviewed before the release.
+
+QA Lead: I can test the login and dashboard modules. I will complete testing by Monday.
+
+Developer: I will also prepare the deployment build once QA finishes testing.
+
+Project Manager: Great. So the decisions are the blue and white theme and releasing after QA approval.`;
 
 export default function Home() {
-  const [inputMode, setInputMode] = useState<"transcript" | "video">(
-    "transcript"
-  );
-  const [transcript, setTranscript] = useState<string>("");
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [summary, setSummary] = useState<string>("");
-  const [decisions, setDecisions] = useState<string[]>([]);
-  const [actionItems, setActionItems] = useState<string[]>([]);
+  const [transcript, setTranscript] = useState("");
+  const [result, setResult] = useState<MeetingResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleAnalyze = () => {
+  async function analyzeMeeting() {
+    if (!transcript.trim()) {
+      setError("Please enter a meeting transcript first.");
+      return;
+    }
+
     setLoading(true);
+    setError("");
+    setResult(null);
 
-    setTimeout(() => {
-      setSummary("This is a test summary. Backend not connected yet.");
-      setDecisions(["Test decision 1", "Test decision 2"]);
-      setActionItems(["Test action item 1", "Test action item 2"]);
+    try {
+      const response = await fetch("/api/meeting-intelligence",  {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          transcript: transcript.trim(),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to analyze meeting.");
+      }
+
+      setResult(data);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong."
+      );
+    } finally {
       setLoading(false);
-    }, 1000);
-  };
+    }
+  }
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setVideoFile(file);
-  };
+  function loadSample() {
+    setTranscript(sampleTranscript);
+    setResult(null);
+    setError("");
+  }
 
-  const isButtonDisabled =
-    loading ||
-    (inputMode === "transcript" && transcript.trim() === "") ||
-    (inputMode === "video" && videoFile === null);
+  function clearAll() {
+    setTranscript("");
+    setResult(null);
+    setError("");
+  }
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6">
-      <h1 className="text-3xl font-bold text-center mb-8 text-gray-800">
-        AI Meeting-to-Action Intelligence Agent
-      </h1>
+    <main className="min-h-screen bg-slate-950 text-white">
+      {/* Header */}
+      <header className="border-b border-white/10 bg-slate-950">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">
+              Meeting<span className="text-blue-400">AI</span>
+            </h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto">
-        {/* INPUT SECTION */}
-        <div className="bg-white rounded-2xl shadow-md p-6 flex flex-col">
-          <div className="flex gap-2 mb-4">
-            <button
-              type="button"
-              onClick={() => setInputMode("transcript")}
-              className={`flex-1 py-2 rounded-lg font-semibold text-sm ${
-                inputMode === "transcript"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              Paste Transcript
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setInputMode("video")}
-              className={`flex-1 py-2 rounded-lg font-semibold text-sm ${
-                inputMode === "video"
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              Upload Meeting Video
-            </button>
-          </div>
-
-          {/* TRANSCRIPT INPUT */}
-          {inputMode === "transcript" && (
-            <textarea
-              className="flex-1 w-full min-h-[350px] border border-gray-300 rounded-lg p-4 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Paste your messy meeting transcript here..."
-              value={transcript}
-              onChange={(e) => setTranscript(e.target.value)}
-            />
-          )}
-
-          {/* VIDEO INPUT */}
-          {inputMode === "video" && (
-            <div className="flex-1 min-h-[350px] flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <input
-                type="file"
-                accept="video/*,audio/*"
-                onChange={handleFileChange}
-                className="text-sm"
-              />
-
-              {videoFile && (
-                <p className="text-sm text-gray-600 mt-3">
-                  Selected: {videoFile.name}
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* ANALYZE BUTTON */}
-          <button
-            type="button"
-            onClick={handleAnalyze}
-            disabled={isButtonDisabled}
-            className={`mt-4 font-semibold py-3 rounded-lg transition ${
-              isButtonDisabled
-                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                : "bg-blue-600 text-white hover:bg-blue-700"
-            }`}
-          >
-            {loading ? "Analyzing..." : "Analyze Meeting"}
-          </button>
-        </div>
-
-        {/* OUTPUT SECTION */}
-        <div className="flex flex-col gap-6">
-          {/* SUMMARY */}
-          <div className="bg-blue-50 border border-blue-200 rounded-2xl shadow-md p-6">
-            <h2 className="text-lg font-bold text-blue-700 mb-2">
-              Summary
-            </h2>
-
-            <p className="text-gray-700 text-sm">
-              {summary || "Summary will appear here after analysis."}
+            <p className="mt-1 text-sm text-slate-400">
+              AI Meeting-to-Action Intelligence Agent
             </p>
           </div>
 
-          {/* DECISIONS */}
-          <div className="bg-green-50 border border-green-200 rounded-2xl shadow-md p-6">
-            <h2 className="text-lg font-bold text-green-700 mb-2">
-              Key Decisions
-            </h2>
-
-            {decisions.length > 0 ? (
-              <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                {decisions.map((decision, index) => (
-                  <li key={index}>{decision}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-gray-500 text-sm">
-                Decisions will appear here.
-              </p>
-            )}
-          </div>
-
-          {/* ACTION ITEMS */}
-          <div className="bg-orange-50 border border-orange-200 rounded-2xl shadow-md p-6">
-            <h2 className="text-lg font-bold text-orange-700 mb-2">
-              Action Items
-            </h2>
-
-            {actionItems.length > 0 ? (
-              <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                {actionItems.map((actionItem, index) => (
-                  <li key={index}>{actionItem}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-gray-500 text-sm">
-                Action items will appear here.
-              </p>
-            )}
+          <div className="hidden rounded-full border border-blue-400/20 bg-blue-400/10 px-4 py-2 text-xs font-medium text-blue-300 sm:block">
+            G13 • Meeting Intelligence
           </div>
         </div>
-      </div>
+      </header>
+
+      {/* Main */}
+      <section className="mx-auto max-w-7xl px-6 py-8">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold">
+            Turn messy meetings into clear actions.
+          </h2>
+
+          <p className="mt-2 max-w-2xl text-slate-400">
+            Paste your meeting transcript and let AI extract the
+            summary, decisions, and action items automatically.
+          </p>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Left Side */}
+          <section className="rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">
+                  Meeting Transcript
+                </h3>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Paste your raw meeting conversation below.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={loadSample}
+                className="rounded-lg border border-blue-400/30 bg-blue-400/10 px-3 py-2 text-xs font-medium text-blue-300 hover:bg-blue-400/20"
+              >
+                Load Sample
+              </button>
+            </div>
+
+            <textarea
+              value={transcript}
+              onChange={(e) => {
+                setTranscript(e.target.value);
+                setError("");
+              }}
+              placeholder="Paste meeting transcript here..."
+              className="h-[430px] w-full resize-none rounded-xl border border-white/10 bg-slate-950 p-4 text-sm leading-6 text-slate-200 outline-none placeholder:text-slate-600 focus:border-blue-400/60"
+            />
+
+            <div className="mt-4 flex gap-3">
+              <button
+                type="button"
+                onClick={analyzeMeeting}
+                disabled={loading}
+                className="flex-1 rounded-xl bg-blue-500 px-5 py-3 font-semibold text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? "Analyzing Meeting..." : "Analyze Meeting"}
+              </button>
+
+              <button
+                type="button"
+                onClick={clearAll}
+                className="rounded-xl border border-white/10 px-5 py-3 font-medium text-slate-300 hover:bg-white/5"
+              >
+                Clear
+              </button>
+            </div>
+
+            {error && (
+              <div className="mt-4 rounded-xl border border-red-400/20 bg-red-400/10 p-3 text-sm text-red-300">
+                {error}
+              </div>
+            )}
+          </section>
+
+          {/* Right Side */}
+          <section className="space-y-5">
+            {/* Summary */}
+            <div className="rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-xl">
+              <div className="mb-3 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-xl">
+                  📝
+                </div>
+
+                <div>
+                  <h3 className="font-semibold">
+                    Meeting Summary
+                  </h3>
+
+                  <p className="text-xs text-slate-500">
+                    AI-generated overview
+                  </p>
+                </div>
+              </div>
+
+              {result ? (
+                <p className="text-sm leading-7 text-slate-300">
+                  {result.summary}
+                </p>
+              ) : (
+                <p className="text-sm italic text-slate-600">
+                  Your meeting summary will appear here.
+                </p>
+              )}
+            </div>
+
+            {/* Decisions */}
+            <div className="rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-xl">
+              <div className="mb-3 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-xl">
+                  🎯
+                </div>
+
+                <div>
+                  <h3 className="font-semibold">
+                    Key Decisions
+                  </h3>
+
+                  <p className="text-xs text-slate-500">
+                    Important decisions made
+                  </p>
+                </div>
+              </div>
+
+              {result && result.decisions?.length > 0 ? (
+                <div className="space-y-3">
+                  {result.decisions.map((decision, index) => (
+                    <div
+                      key={index}
+                      className="rounded-xl border border-purple-400/10 bg-purple-400/5 p-3 text-sm leading-6 text-slate-300"
+                    >
+                      <span className="mr-2 font-semibold text-purple-300">
+                        {index + 1}.
+                      </span>
+
+                      {decision}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm italic text-slate-600">
+                  Key decisions will appear here.
+                </p>
+              )}
+            </div>
+
+            {/* Action Items */}
+            <div className="rounded-2xl border border-white/10 bg-slate-900 p-5 shadow-xl">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-xl">
+                  ✅
+                </div>
+
+                <div>
+                  <h3 className="font-semibold">
+                    Action Items
+                  </h3>
+
+                  <p className="text-xs text-slate-500">
+                    Tasks extracted from the meeting
+                  </p>
+                </div>
+              </div>
+
+              {result && result.action_items?.length > 0 ? (
+                <div className="space-y-3">
+                  {result.action_items.map((item, index) => (
+                    <div
+                      key={index}
+                      className="rounded-xl border border-emerald-400/10 bg-emerald-400/5 p-4"
+                    >
+                      <div className="mb-2 flex items-start gap-3">
+                        <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-400/10 text-xs font-bold text-emerald-300">
+                          {index + 1}
+                        </div>
+
+                        <p className="text-sm leading-6 text-slate-200">
+                          {item.task}
+                        </p>
+                      </div>
+
+                      <div className="ml-9 flex flex-wrap gap-2 text-xs">
+                        <span className="rounded-full bg-white/5 px-3 py-1 text-slate-400">
+                          👤 {item.owner || "Unassigned"}
+                        </span>
+
+                        <span className="rounded-full bg-white/5 px-3 py-1 text-slate-400">
+                          📅 {item.deadline || "No deadline"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm italic text-slate-600">
+                  Action items will appear here.
+                </p>
+              )}
+            </div>
+          </section>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="mx-auto max-w-7xl px-6 pb-8 pt-4 text-center text-xs text-slate-600">
+        G13 • AI Meeting-to-Action Intelligence Agent
+      </footer>
     </main>
   );
 }
